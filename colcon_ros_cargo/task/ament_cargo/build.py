@@ -75,6 +75,29 @@ class AmentCargoBuildTask(CargoBuildTask):
             'AMENT_PREFIX_PATH',
             self.context.args.install_base,
             mode='prepend')
+        
+        # Republish conda specific paths for build scripts 
+        conda_prefix = env.get('CONDA_PREFIX')
+        if conda_prefix is not None:
+            conda_prefix = os.path.join(conda_prefix, 'lib')
+            if os.uname().sysname == 'Darwin':
+                dyld_library_path = env.get('DYLD_LIBRARY_PATH')
+                if dyld_library_path is not None:
+                    env['DYLD_LIBRARY_PATH'] = dyld_library_path + os.pathsep + conda_prefix
+                else:
+                    env['DYLD_LIBRARY_PATH'] = conda_prefix
+            elif os.uname().sysname == 'Linux':
+                ld_library_path = env.get('LD_LIBRARY_PATH')
+                if ld_library_path is not None:
+                    env['LD_LIBRARY_PATH'] = ld_library_path + os.pathsep + conda_prefix
+                else:
+                    env['LD_LIBRARY_PATH'] = conda_prefix
+            elif os.uname().sysname == 'Windows':
+                path = env.get('PATH')
+                if path is not None:
+                    env['PATH'] = path + os.pathsep + conda_prefix
+                else:
+                    env['PATH'] = conda_prefix
 
     def _build_cmd(self, cargo_args):
         args = self.context.args
